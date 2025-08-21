@@ -1,0 +1,31 @@
+unmanaged implementation in class zbp_c_mcp_method_validate unique;
+strict ( 2 );
+
+define behavior for ZC_MCP_METHOD_VALIDATE //alias <alias_name>
+//late numbering
+lock master
+authorization master ( instance )
+//etag master <field_name>
+{
+
+    field(readonly) request_id;
+  // Custom action to validate methods
+  action validate_methods parameter zmcp_validate_input result [1] zmcp_validate_result;
+
+  // Custom action to execute method calls
+  action execute_calls parameter zmcp_execute_input result [1] zmcp_execute_result;
+
+  mapping for ZC_MCP_METHOD_VALIDATE
+  {
+    request_id = request_id;
+    class_name = class_name;
+    class_code = class_code;
+    method_calls = method_calls;
+    status = status;
+    call_result = call_result;
+    message = message;
+    created_at = created_at;
+  }
+
+
+}

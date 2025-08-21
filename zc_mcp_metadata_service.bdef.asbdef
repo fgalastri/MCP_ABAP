@@ -1,0 +1,7 @@
+unmanaged;
+strict ( 2 );
+
+define behavior for ZC_MCP_METADATA_SERVICE
+{
+  use action Execute;
+}

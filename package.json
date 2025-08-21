@@ -1,0 +1,20 @@
+{
+  "name": "abap-mcp-server",
+  "version": "1.0.0",
+  "description": "ABAP Method Validation MCP Server in Node.js",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --inspect server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.6.0",
+    "axios": "^1.6.0",
+    "uuid": "^9.0.0"
+  },
+  "keywords": ["mcp", "abap", "sap", "validation"],
+  "author": "ABAP MCP Server",
+  "license": "MIT"
+}
+
