@@ -33,3 +33,15 @@ Thumbs.db
 
 # MCP specific
 *.bak
+
+# ABAP development artifacts - XML metadata files
+*.xml
+*.baseinfo
+*.iwsv.xml
+*.iwmo.xml
+
+# ABAP Git metadata
+.abapgit.xml
+
+# Python cache
+__pycache__/

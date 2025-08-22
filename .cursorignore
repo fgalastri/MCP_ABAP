@@ -1,0 +1,9 @@
+# Hide XML files from Cursor
+*.xml
+
+# Hide other ABAP metadata files if needed
+*.baseinfo
+
+# Hide specific ABAP development artifacts
+*.iwsv.xml
+*.iwmo.xml
