@@ -1,0 +1,4 @@
+@EndUserText.label: 'MCP Method Validation Service Binding'
+define service binding ZSB_MCP_METHOD_VALIDATE
+  type odata_v4_ui
+  service ZSD_MCP_METHOD_VALIDATE;

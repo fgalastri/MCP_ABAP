@@ -5,6 +5,12 @@ CLASS zcl_metadata_demo DEFINITION
 
   PUBLIC SECTION.
     METHODS run_demo.
+    METHODS get_mara_record
+      RETURNING
+        VALUE(rs_mara) TYPE mara.
+    METHODS get_material_number
+      RETURNING
+        VALUE(rv_matnr) TYPE matnr.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
@@ -15,6 +21,7 @@ CLASS zcl_metadata_demo DEFINITION
     METHODS demo_table_fields.
     METHODS demo_class_methods.
     METHODS demo_functions.
+    METHODS test_mara_selection.
     METHODS write_results
       IMPORTING
         iv_title TYPE ty_title
@@ -32,13 +39,14 @@ CLASS zcl_metadata_demo IMPLEMENTATION.
     demo_table_fields( ).
     demo_class_methods( ).
     demo_functions( ).
+    test_mara_selection( ).
   ENDMETHOD.
 
   METHOD demo_cds_fields.
     " Demonstrate CDS fields retrieval
-    DATA lt_cds_names TYPE zcl_metadata_service=>ty_cds_name_tab.
-    DATA ls_cds_name TYPE zcl_metadata_service=>ty_cds_name.
-    DATA lt_results TYPE zcl_metadata_service=>ty_cds_field_tab.
+    DATA lt_cds_names TYPE zcl_metadata_service=>ddlname_tab.
+    DATA ls_cds_name TYPE sxco_cds_object_name.
+    DATA lt_results TYPE zcl_metadata_service=>ty_cds_source_tab.
 
     " Prepare test data
     ls_cds_name = 'ZV_CUSTOMER_DATA'.
@@ -46,8 +54,8 @@ CLASS zcl_metadata_demo IMPLEMENTATION.
     ls_cds_name = 'ZV_MATERIAL_INFO'.
     APPEND ls_cds_name TO lt_cds_names.
 
-    " Get CDS field metadata
-    lt_results = mo_metadata_service->get_cds_fields( lt_cds_names ).
+    " Get CDS source metadata
+    lt_results = mo_metadata_service->get_cds_source( lt_cds_names ).
 
     " Display results
     write_results(
@@ -58,8 +66,8 @@ CLASS zcl_metadata_demo IMPLEMENTATION.
 
   METHOD demo_table_fields.
     " Demonstrate table fields retrieval
-    DATA lt_table_names TYPE zcl_metadata_service=>ty_field_name_tab.
-    DATA ls_table_name TYPE zcl_metadata_service=>ty_field_name.
+    DATA lt_table_names TYPE zcl_metadata_service=>ddlname_tab.
+    DATA ls_table_name TYPE sxco_cds_object_name.
     DATA lt_results TYPE zcl_metadata_service=>ty_table_field_tab.
 
     " Prepare test data
@@ -80,8 +88,8 @@ CLASS zcl_metadata_demo IMPLEMENTATION.
 
   METHOD demo_class_methods.
     " Demonstrate class methods retrieval
-    DATA lt_class_names TYPE zcl_metadata_service=>ty_class_name_tab.
-    DATA ls_class_name TYPE zcl_metadata_service=>ty_class_name.
+    DATA lt_class_names TYPE zcl_metadata_service=>ddlname_tab.
+    DATA ls_class_name TYPE sxco_cds_object_name.
     DATA lt_results TYPE zcl_metadata_service=>ty_method_param_tab.
 
     " Prepare test data
@@ -102,8 +110,8 @@ CLASS zcl_metadata_demo IMPLEMENTATION.
 
   METHOD demo_functions.
     " Demonstrate function modules retrieval
-    DATA lt_func_names TYPE zcl_metadata_service=>ty_func_name_tab.
-    DATA ls_func_name TYPE zcl_metadata_service=>ty_func_name.
+    DATA lt_func_names TYPE zcl_metadata_service=>ddlname_tab.
+    DATA ls_func_name TYPE sxco_cds_object_name.
     DATA lt_results TYPE zcl_metadata_service=>ty_function_param_tab.
 
     " Prepare test data
@@ -142,6 +150,37 @@ CLASS zcl_metadata_demo IMPLEMENTATION.
       " Results found - in real implementation, format and display
     ELSE.
       " No results found
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD get_mara_record.
+    " Select one record from MARA table with all fields
+    SELECT SINGLE *
+      FROM mara
+      INTO rs_mara.
+  ENDMETHOD.
+
+  METHOD get_material_number.
+    " Select one material number from MARA table
+    SELECT SINGLE matnr
+      FROM mara
+      INTO rv_matnr.
+  ENDMETHOD.
+
+  METHOD test_mara_selection.
+    " Test the MARA selection method
+    " Call the method with RETURNING parameter and check result directly
+    DATA: lv_matnr TYPE matnr.
+    
+    " Get the result and extract material number for checking
+    lv_matnr = get_mara_record( )-matnr.
+    
+    " Check if record was found
+    IF lv_matnr IS NOT INITIAL.
+      " Record found - in real implementation, process the data
+      " For demo purposes, we just verify it's not empty
+    ELSE.
+      " No record found
     ENDIF.
   ENDMETHOD.
 

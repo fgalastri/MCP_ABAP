@@ -1,0 +1,4 @@
+@EndUserText.label: 'Method validate'
+define service ZSD_MCP_METHOD_VALIDATE {
+  expose ZC_MCP_METHOD_VALIDATE;
+}
