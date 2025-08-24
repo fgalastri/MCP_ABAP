@@ -23,7 +23,8 @@ const SAP_CONFIG = {
   password: process.env.SAP_PASSWORD || 'Vaees@20252026!',
   client: process.env.SAP_CLIENT || '210',
   validationServicePath: '/sap/opu/odata4/sap/zsb_mcp_method_validate/srvd_a2x/sap/zsd_mcp_method_validate/0001/',
-  metadataServicePath: '/sap/opu/odata4/sap/zsb_mcp_metadata_service/srvd_a2x/sap/zsd_mcp_metadata_service/0001/'
+  metadataServicePath: '/sap/opu/odata4/sap/zsb_mcp_metadata_service/srvd_a2x/sap/zsd_mcp_metadata_service/0001/',
+  programValidationServicePath: '/sap/opu/odata4/sap/zsb_mcp_program_validate/srvd_a2x/sap/zsd_mcp_program_validate/0001/'
 };
 
 // Base SAP Connection Class
@@ -504,9 +505,61 @@ class MetadataSAPConnection extends BaseSAPConnection {
   }
 }
 
+// Program Validation Service Connection (for validate_abap_program)
+class ProgramValidationSAPConnection extends BaseSAPConnection {
+  constructor() {
+    super(SAP_CONFIG.programValidationServicePath);
+  }
+
+  async validateProgramSyntax(programName, sourceCode) {
+    try {
+      // Get CSRF token if needed
+      const tokenResult = await this.getCsrfToken();
+      if (!tokenResult.success) {
+        return {
+          success: false,
+          error: 'Failed to obtain CSRF token',
+          details: tokenResult
+        };
+      }
+
+      // Call the program validation service action
+      const requestId = uuidv4();
+      const escapedId = encodeURIComponent(`'${requestId}'`);
+      const actionUrl = `${this.serviceUrl}ProgramValidation(${escapedId})/com.sap.gateway.srvd_a2x.zsd_mcp_program_validate.v0001.validate_program`;
+      
+      const requestBody = {
+        PROGRAM_NAME: programName,
+        SOURCE_CODE: sourceCode
+      };
+
+      const response = await this.client.post(actionUrl, requestBody, {
+        headers: {
+          'X-CSRF-Token': this.csrfToken,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+
+      return {
+        success: true,
+        data: response.data
+      };
+
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        details: error.response?.data || error
+      };
+    }
+  }
+}
+
 // Initialize SAP connections
 const validationConnection = new ValidationSAPConnection();
 const metadataConnection = new MetadataSAPConnection();
+const programValidationConnection = new ProgramValidationSAPConnection();
 
 // Create MCP server
 const server = new Server(
@@ -715,6 +768,24 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           },
           required: ['table_names']
         }
+      },
+      {
+        name: 'validate_abap_program',
+        description: 'Validate ABAP program syntax using GENERATE SUBROUTINE statement. Validates program source code for syntax errors.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            program_name: {
+              type: 'string',
+              description: 'Name of the ABAP program to validate'
+            },
+            source_code: {
+              type: 'string',
+              description: 'Complete ABAP program source code'
+            }
+          },
+          required: ['program_name', 'source_code']
+        }
       }
     ]
   };
@@ -914,6 +985,76 @@ ${table_names.map(name => `- ${name}`).join('\n')}
         ]
       };
 
+    } else if (request.params.name === 'validate_abap_program') {
+      const { program_name, source_code } = request.params.arguments;
+
+      // ABAP Program Validation Request:
+      // Program: ${program_name}
+      // Source Code Length: ${source_code.length} characters
+
+      const result = await programValidationConnection.validateProgramSyntax(program_name, source_code);
+
+      let responseText;
+      if (result.success) {
+        const validation = result.data;
+        
+        if (validation.status === 'SUCCESS') {
+          responseText = `✅ **ABAP Program Syntax Validation Successful**
+
+**Program Name:** ${program_name}
+**Request ID:** ${validation.request_id}
+**Status:** ${validation.status}
+
+**Validation Details:**
+\`\`\`json
+${JSON.stringify(validation, null, 2)}
+\`\`\`
+
+🎉 Your ABAP program syntax is valid and ready for execution!`;
+        } else {
+          responseText = `⚠️ **ABAP Program Syntax Validation Failed**
+
+**Program Name:** ${program_name}
+**Request ID:** ${validation.request_id}
+**Status:** ${validation.status}
+**Error Line:** ${validation.error_line || 'Unknown'}
+
+**Error Message:**
+${validation.message || 'No error message provided'}
+
+**Error Details:**
+${validation.error_message || 'No additional error details'}
+
+**Validation Response:**
+\`\`\`json
+${JSON.stringify(validation, null, 2)}
+\`\`\`
+
+🔧 Please fix the syntax errors and try again.`;
+        }
+      } else {
+        responseText = `❌ **ABAP Program Validation Service Error**
+
+**Program Name:** ${program_name}
+**Error:** ${result.error || 'Unknown error occurred'}
+
+**Service Response:**
+\`\`\`json
+${JSON.stringify(result, null, 2)}
+\`\`\`
+
+📡 **Error occurred during program validation request** - Check service connectivity and try again.`;
+      }
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: responseText
+          }
+        ]
+      };
+
     } else {
       throw new Error(`Unknown tool: ${request.params.name}`);
     }
@@ -935,9 +1076,10 @@ ${table_names.map(name => `- ${name}`).join('\n')}
 async function main() {
   // Starting ABAP Method Validation MCP Server v3 (Node.js) with dual service routing...
   
-  // Test both SAP connections on startup
+  // Test all SAP connections on startup
   const validationTokenResult = await validationConnection.getCsrfToken();
   const metadataTokenResult = await metadataConnection.getCsrfToken();
+  const programValidationTokenResult = await programValidationConnection.getCsrfToken();
   // Connection test results will be available during first tool calls
   
   const transport = new StdioServerTransport();

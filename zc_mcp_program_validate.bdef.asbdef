@@ -1,0 +1,27 @@
+unmanaged implementation in class zbp_c_mcp_prog_validate unique;
+strict ( 2 );
+
+define behavior for ZC_MCP_PROGRAM_VALIDATE //alias <alias_name>
+//late numbering
+lock master
+authorization master ( instance )
+//etag master <field_name>
+{
+
+    field(readonly) request_id;
+  // Custom action to validate program syntax
+  action validate_program parameter zmcp_prog_validate_input result [1] zmcp_prog_validate_result;
+
+  mapping for ZC_MCP_PROGRAM_VALIDATE
+  {
+    request_id = request_id;
+    program_name = program_name;
+    source_code = source_code;
+    status = status;
+    message = message;
+    error_line = error_line;
+    error_message = error_message;
+    created_at = created_at;
+  }
+
+}

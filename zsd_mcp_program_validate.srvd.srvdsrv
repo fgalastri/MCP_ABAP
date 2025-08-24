@@ -1,0 +1,5 @@
+@EndUserText.label: 'MCP Program Validation Service'
+define service ZSD_MCP_PROGRAM_VALIDATE {
+  expose ZC_MCP_PROGRAM_VALIDATE as ProgramValidation;
+}
+
